@@ -77,6 +77,11 @@ nano ~/.glmenv/env
 ```bash
 cd /path/to/your/project
 glm-code
+# docker 실행후
+# mcp 설정, 다른 쉘작업 진행
+
+# claude code 수행
+claude --dangerously-skip-permissions
 ```
 
 ### 작업 환경
