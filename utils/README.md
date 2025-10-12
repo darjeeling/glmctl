@@ -69,6 +69,8 @@ Claude 활동을 모니터링하고, idle 상태일 때 매시 정각마다 자�
 - 설정 정보 (디렉토리, 프롬프트)
 - 최근 실행 로그 (최근 5개)
 
+![Claude Idle Monitor 화면](img/claude_idle_monitor.png)
+
 #### 사용법
 
 ```bash
