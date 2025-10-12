@@ -110,6 +110,10 @@ ENV VISUAL=nano
 # https://github.com/BeaconBay/ck
 RUN cargo install ck-search
 
+# happy coder
+# https://github.com/slopus/happy
+RUN npm install -g happy-coder
+
 # Set the default editor and visual
 ENV EDITOR=nano
 ENV VISUAL=nano

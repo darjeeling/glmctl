@@ -67,11 +67,15 @@ mkdir -p "$LOCAL_BIN"
 echo ""
 echo -e "${GREEN}✓${NC} Created directory: $LOCAL_BIN"
 
-# 7. Create symlink to glm-code.sh
+# 7. Create symlink to glm-code.sh and cc-code.sh
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ln -sf "$SCRIPT_DIR/glm-code.sh" "$LOCAL_BIN/glm-code"
 chmod +x "$SCRIPT_DIR/glm-code.sh"
 echo -e "${GREEN}✓${NC} Created symlink: $LOCAL_BIN/glm-code"
+
+ln -sf "$SCRIPT_DIR/cc-code.sh" "$LOCAL_BIN/cc-code"
+chmod +x "$SCRIPT_DIR/cc-code.sh"
+echo -e "${GREEN}✓${NC} Created symlink: $LOCAL_BIN/cc-code"
 
 # 8. Check if ~/.local/bin is in PATH
 echo ""
@@ -97,5 +101,9 @@ echo -e "${GREEN}✅ Installation complete!${NC}"
 echo ""
 echo "Next steps:"
 echo "  1. Edit $GLMENV_DIR/env to configure your API settings"
-echo "  2. Run 'glm-code' in any directory to start coding"
+echo "  2. Run 'glm-code' for GLM API or 'cc-code' for Claude Code"
+echo ""
+echo "Available commands:"
+echo "  - glm-code: Use GLM API (requires $GLMENV_DIR/env configuration)"
+echo "  - cc-code:  Use standard Claude Code (uses ~/.claude)"
 echo ""
