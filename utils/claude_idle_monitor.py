@@ -38,13 +38,11 @@ class ClaudeIdleMonitor:
         self,
         directory: str,
         prompt: str,
-        check_interval: int = 10,
-        idle_threshold: int = 20,
     ):
         self.directory = Path(directory).resolve()
         self.prompt = prompt
-        self.check_interval = check_interval  # minutes
-        self.idle_threshold = idle_threshold  # minutes
+        self.check_interval = 0.5  # minutes (30 seconds)
+        self.idle_threshold = 10  # minutes
 
         self.last_activity_time: Optional[datetime] = None
         self.last_activity_file: Optional[str] = None
@@ -255,15 +253,6 @@ class ClaudeIdleMonitor:
         else:
             status_table.add_row("Status:", "Initializing...")
 
-        # Last check
-        if self.last_check_time:
-            last_check = self.last_check_time.strftime("%H:%M:%S")
-            status_table.add_row("Last Check:", last_check)
-
-        # Next check
-        next_check = (datetime.now() + timedelta(minutes=self.check_interval)).strftime("%H:%M:%S")
-        status_table.add_row("Next Check:", next_check)
-
         # Next execution (if idle)
         if self.is_idle():
             next_hour = self.get_next_hour().strftime("%H:%M:%S")
@@ -271,8 +260,6 @@ class ClaudeIdleMonitor:
 
         # Configuration
         status_table.add_row("", "")
-        status_table.add_row("Check Interval:", f"{self.check_interval} minutes")
-        status_table.add_row("Idle Threshold:", f"{self.idle_threshold} minutes")
         status_table.add_row("Target Directory:", str(self.directory))
         status_table.add_row("Prompt:", self.prompt[:50] + "..." if len(self.prompt) > 50 else self.prompt)
 
@@ -320,41 +307,30 @@ def main():
     )
     parser.add_argument(
         "-d", "--directory",
-        required=True,
-        help="Directory where claude command will be executed"
+        default=None,
+        help="Directory where claude command will be executed (default: current directory)"
     )
     parser.add_argument(
         "-p", "--prompt",
-        required=True,
-        help="Prompt to pass to claude command"
-    )
-    parser.add_argument(
-        "--check-interval",
-        type=int,
-        default=10,
-        help="Check interval in minutes (default: 10)"
-    )
-    parser.add_argument(
-        "--idle-threshold",
-        type=int,
-        default=20,
-        help="Idle threshold in minutes (default: 20)"
+        default="how about today?. what time is it now?",
+        help="Prompt to pass to claude command (default: 'how about today?. what time is it now?')"
     )
 
     args = parser.parse_args()
 
-    # Validate directory
-    target_dir = Path(args.directory).resolve()
-    if not target_dir.exists():
-        console.print(f"[red]Error: Directory does not exist: {target_dir}[/red]")
-        sys.exit(1)
+    # Use current directory if not specified
+    if args.directory is None:
+        target_dir = Path.cwd()
+    else:
+        target_dir = Path(args.directory).resolve()
+        if not target_dir.exists():
+            console.print(f"[red]Error: Directory does not exist: {target_dir}[/red]")
+            sys.exit(1)
 
     # Create and start monitor
     monitor = ClaudeIdleMonitor(
         directory=str(target_dir),
         prompt=args.prompt,
-        check_interval=args.check_interval,
-        idle_threshold=args.idle_threshold,
     )
 
     console.print(f"[green]Starting Claude Idle Monitor...[/green]")

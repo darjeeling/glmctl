@@ -52,8 +52,8 @@ Claude 활동을 모니터링하고, idle 상태일 때 매시 정각마다 자�
 
 #### 기능
 - `~/.claude/history.jsonl` 및 `~/.claude/projects/**/*.jsonl` 파일 모니터링
-- 10분마다 파일 변경 시간 체크
-- 20분 이상 idle 감지 시 매시 정각 (00:00, 01:00, ..., 23:00)에 자동 실행
+- 30초마다 파일 변경 시간 체크
+- 10분 이상 idle 감지 시 매시 정각 (00:00, 01:00, ..., 23:00)에 자동 실행
 - 실시간 TUI 대시보드 (Rich 라이브러리)
 - 실행 후에도 계속 모니터링 유지
 
@@ -64,35 +64,36 @@ Claude 활동을 모니터링하고, idle 상태일 때 매시 정각마다 자�
 - **Last Prompt**: 마지막으로 실행한 프롬프트 (최대 100자)
 - Idle 상태 및 경과 시간
   - Active (녹색): 활동 중
-  - IDLE (빨간색): idle 상태
-- 다음 체크 시간
+  - IDLE (빨간색): idle 상태 (10분 이상)
 - 다음 실행 예정 시간 (idle일 때만)
-- 설정 정보 (체크 간격, idle 임계값, 디렉토리, 프롬프트)
+- 설정 정보 (디렉토리, 프롬프트)
 - 최근 실행 로그 (최근 5개)
 
 #### 사용법
 
 ```bash
-# 기본 사용 (uv로 실행, 의존성 자동 설치)
-uv run utils/claude_idle_monitor.py \
-  -d /path/to/project \
-  -p "continue all previous works"
+# 기본 사용 (현재 디렉토리, 기본 프롬프트)
+uv run utils/claude_idle_monitor.py
 
-# 커스텀 설정
+# 디렉토리 지정
+uv run utils/claude_idle_monitor.py -d /path/to/project
+
+# 프롬프트 커스터마이징
+uv run utils/claude_idle_monitor.py -p "continue all previous works"
+
+# 디렉토리와 프롬프트 모두 지정
 uv run utils/claude_idle_monitor.py \
   -d ~/projects/myapp \
-  -p "check for errors and fix them" \
-  --check-interval 5 \
-  --idle-threshold 30
+  -p "check for errors and fix them"
 ```
 
-#### 필수 인자
-- `-d, --directory`: Claude를 실행할 작업 디렉토리
-- `-p, --prompt`: Claude에 전달할 프롬프트
+#### 옵션 인자
+- `-d, --directory`: Claude를 실행할 작업 디렉토리 (기본: 현재 디렉토리)
+- `-p, --prompt`: Claude에 전달할 프롬프트 (기본: "how about today?. what time is it now?")
 
-#### 선택적 인자
-- `--check-interval`: 체크 주기 (분, 기본: 10)
-- `--idle-threshold`: Idle 판단 기준 (분, 기본: 20)
+#### 고정 설정
+- 체크 간격: 30초마다 파일 변경 확인
+- Idle 임계값: 10분 이상 활동 없을 때 idle 상태로 판단
 
 #### 종료
 - `Ctrl+C` 또는 `SIGTERM`으로 graceful shutdown
@@ -150,17 +151,20 @@ cd /path/to/project
 다른 작업을 하면서 Claude가 idle 상태일 때 자동으로 작업 계속:
 
 ```bash
-# 터미널 1: 일반 작업
+# 프로젝트 디렉토리로 이동
 cd /path/to/project
+
+# 터미널 1: 일반 작업
 claude -p "add feature X"
 
-# 터미널 2: 모니터링 시작
-uv run utils/claude_idle_monitor.py \
-  -d /path/to/project \
-  -p "continue all previous works"
+# 터미널 2: 모니터링 시작 (현재 디렉토리)
+uv run utils/claude_idle_monitor.py
+
+# 또는 커스텀 프롬프트로
+uv run utils/claude_idle_monitor.py -p "continue all previous works"
 ```
 
-20분 동안 활동이 없으면 매시 정각마다 자동으로 작업을 이어갑니다.
+10분 동안 활동이 없으면 매시 정각마다 자동으로 작업을 이어갑니다.
 
 ---
 
