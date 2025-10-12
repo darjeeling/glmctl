@@ -84,6 +84,31 @@ glm-code
 claude --dangerously-skip-permissions
 ```
 
+### 추가 프로젝트를 참조하기
+
+다른 프로젝트를 readonly로 마운트하여 참조할 수 있습니다:
+
+```bash
+# 여러 프로젝트를 함께 마운트
+cd /path/to/your/project
+glm-code --with ../backend --with ../frontend
+
+# 컨테이너 내부 구조
+# /workspace/project   (현재 디렉토리, read-write)
+# /workspace/backend   (readonly)
+# /workspace/frontend  (readonly)
+```
+
+**사용 예시:**
+- 다른 프로젝트의 코드를 참조하면서 작업할 때
+- 여러 마이크로서비스를 함께 분석할 때
+- 공통 라이브러리를 참조하면서 개발할 때
+
+**주의사항:**
+- 추가 프로젝트는 readonly로 마운트되어 수정할 수 없습니다
+- 디렉토리 이름이 중복되면 에러가 발생합니다
+- 도움말 보기: `glm-code --help`
+
 ### 작업 환경
 
 - **현재 디렉토리**: `/workspace/<디렉토리명>`에 자동으로 마운트됩니다

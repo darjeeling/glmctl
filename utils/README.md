@@ -48,6 +48,8 @@ Claude Code를 실행하고, 실패 시 자동으로 재시도하는 Bash 스크
 
 Claude 활동을 모니터링하고, idle 상태일 때 매시 정각마다 자동으로 Claude를 실행하는 Python 스크립트입니다.
 
+**사용 목적**: Claude Code Plan은 5시간의 대화 제한이 있습니다. 이 스크립트는 1시간마다 자동으로 Claude를 실행하여 대화를 유지하고, 5시간 제한에 도달하지 않도록 합니다.
+
 #### 기능
 - `~/.claude/history.jsonl` 및 `~/.claude/projects/**/*.jsonl` 파일 모니터링
 - 10분마다 파일 변경 시간 체크
@@ -58,6 +60,8 @@ Claude 활동을 모니터링하고, idle 상태일 때 매시 정각마다 자�
 #### TUI 화면 표시
 - 현재 시간
 - 마지막 활동 시간
+- **Last Project**: 작업 중인 프로젝트의 실제 디렉토리 경로
+- **Last Prompt**: 마지막으로 실행한 프롬프트 (최대 100자)
 - Idle 상태 및 경과 시간
   - Active (녹색): 활동 중
   - IDLE (빨간색): idle 상태

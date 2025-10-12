@@ -12,6 +12,7 @@ Monitors Claude activity files and runs claude command when idle at top of each 
 """
 
 import argparse
+import json
 import os
 import signal
 import subprocess
@@ -46,6 +47,9 @@ class ClaudeIdleMonitor:
         self.idle_threshold = idle_threshold  # minutes
 
         self.last_activity_time: Optional[datetime] = None
+        self.last_activity_file: Optional[str] = None
+        self.last_activity_project_file: Optional[str] = None
+        self.last_prompt: Optional[str] = None
         self.last_check_time: Optional[datetime] = None
         self.execution_logs: list[str] = []
         self.max_logs = 5
@@ -55,24 +59,82 @@ class ClaudeIdleMonitor:
         self.history_file = Path.home() / ".claude" / "history.jsonl"
         self.projects_dir = Path.home() / ".claude" / "projects"
 
-    def get_latest_modification_time(self) -> Optional[datetime]:
-        """Get the most recent modification time from all monitored files."""
+    def get_latest_modification_time(self) -> Optional[tuple[datetime, str, Optional[str]]]:
+        """Get the most recent modification time and file paths.
+
+        Returns:
+            Tuple of (latest_time, latest_file, latest_project_file)
+            - latest_time: Most recent modification time across all files
+            - latest_file: Path to the most recently modified file (history or project)
+            - latest_project_file: Path to the most recently modified project file (None if no project activity)
+        """
         latest_time = None
+        latest_file = None
+        latest_project_time = None
+        latest_project_file = None
 
         # Check history.jsonl
         if self.history_file.exists():
             mtime = datetime.fromtimestamp(self.history_file.stat().st_mtime)
             if latest_time is None or mtime > latest_time:
                 latest_time = mtime
+                latest_file = str(self.history_file)
 
         # Check all .jsonl files in projects directory
         if self.projects_dir.exists():
             for jsonl_file in self.projects_dir.rglob("*.jsonl"):
                 mtime = datetime.fromtimestamp(jsonl_file.stat().st_mtime)
+
+                # Track overall latest
                 if latest_time is None or mtime > latest_time:
                     latest_time = mtime
+                    latest_file = str(jsonl_file)
 
-        return latest_time
+                # Track latest project file separately
+                if latest_project_time is None or mtime > latest_project_time:
+                    latest_project_time = mtime
+                    latest_project_file = str(jsonl_file)
+
+        if latest_time and latest_file:
+            return (latest_time, latest_file, latest_project_file)
+        return None
+
+    def decode_project_id(self, project_id: str) -> str:
+        """Decode project ID to actual file path.
+
+        Claude encodes project paths like: -Users-dj-github-darjeeling-glmctl
+        This decodes it back to: /Users/dj/github/darjeeling/glmctl
+        """
+        if project_id.startswith("-"):
+            return "/" + project_id[1:].replace("-", "/")
+        return project_id
+
+    def get_last_prompt(self) -> Optional[str]:
+        """Get the last prompt from history.jsonl file.
+
+        Returns the 'display' field from the last line of history.jsonl.
+        """
+        try:
+            if not self.history_file.exists():
+                return None
+
+            with open(self.history_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                if not lines:
+                    return None
+
+                # Get last non-empty line
+                for line in reversed(lines):
+                    line = line.strip()
+                    if line:
+                        data = json.loads(line)
+                        return data.get('display')
+
+        except Exception:
+            # Silently ignore errors
+            pass
+
+        return None
 
     def is_idle(self) -> bool:
         """Check if Claude has been idle for longer than threshold."""
@@ -97,10 +159,13 @@ class ClaudeIdleMonitor:
     def check_and_update_activity(self):
         """Check for activity and update last activity time."""
         self.last_check_time = datetime.now()
-        latest_time = self.get_latest_modification_time()
+        result = self.get_latest_modification_time()
 
-        if latest_time:
-            self.last_activity_time = latest_time
+        if result:
+            self.last_activity_time, self.last_activity_file, self.last_activity_project_file = result
+
+        # Update last prompt from history.jsonl
+        self.last_prompt = self.get_last_prompt()
 
     def run_claude(self):
         """Execute claude command if idle."""
@@ -150,6 +215,31 @@ class ClaudeIdleMonitor:
         if self.last_activity_time:
             last_activity = self.last_activity_time.strftime("%Y-%m-%d %H:%M:%S")
             status_table.add_row("Last Activity:", last_activity)
+
+            # Show last project (always show if available)
+            if self.last_activity_project_file:
+                project_path = Path(self.last_activity_project_file)
+                projects_dir = Path.home() / ".claude" / "projects"
+                try:
+                    relative = project_path.relative_to(projects_dir)
+                    project_id = relative.parts[0]
+                    # Decode project ID to actual path
+                    actual_path = self.decode_project_id(project_id)
+                    status_table.add_row(
+                        "Last Project:",
+                        Text(actual_path, style="bold cyan")
+                    )
+                except ValueError:
+                    pass
+
+            # Show last prompt
+            if self.last_prompt:
+                # Truncate if too long
+                prompt_display = self.last_prompt[:100] + "..." if len(self.last_prompt) > 100 else self.last_prompt
+                status_table.add_row(
+                    "Last Prompt:",
+                    Text(prompt_display, style="dim white")
+                )
         else:
             status_table.add_row("Last Activity:", "Checking...")
 
