@@ -104,6 +104,7 @@ eval docker run -it --rm --platform linux/amd64 \
   -v \"$HOME/.claude:/root/.claude\" \
   -v \"$HOME/.gitconfig:/root/.gitconfig\" \
   -v \"$PWD:$PWD\" \
+  -e IS_SANDBOX=1 \
   --workdir \"$PWD\" \
   $MOUNT_OPTIONS \
   glmctl-env-amd64 /bin/bash

@@ -312,7 +312,7 @@ def main():
     )
     parser.add_argument(
         "-p", "--prompt",
-        default="how about today?. what time is it now?",
+        default="analyzie this project",
         help="Prompt to pass to claude command (default: 'how about today?. what time is it now?')"
     )
 
